@@ -28,12 +28,12 @@ script:
 
 after_success:
    - if [ ! -z "$TRAVIS_TAG" ] && [ "$TRAVIS_GO_VERSION" == "1.9" ]; then
-     docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io
+     docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io;
      docker tag skuid/changelog quay.io/skuid/changelog:$TRAVIS_TAG;
      docker push quay.io/skuid/changelog:$TRAVIS_TAG;
      fi
    - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_GO_VERSION" == "1.9" ]; then
-     docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io
+     docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io;
      docker tag skuid/changelog quay.io/skuid/changelog:master;
      docker push quay.io/skuid/changelog:master;
      fi
