@@ -92,11 +92,21 @@ order. Any non-specified sections will be appended to the end alphabetically.
 Any sections that don't exist will be discarded. The "Unknown" section is
 always last.
 
+## Build Status Updates
+
+`changelog` can also be used to validate commits on a Pull Request to ensure that nothing is merged that does not meet your criteria. To do this, run
+
+```
+$ changelog serve --provider github --secret {your-webhook-secret} --token {your-api-token}
+```
+
+This will expose a webhook for Github Pull Request events that will update the build status every time there is an update.
+
+
 ## Roadmap
 
 - [ ] Flesh out README
 - [ ] Add a commit validation pre-commit hook command
-- [ ] Add a web service for Github status checking (ensuring commits are properly formatted)
 - [ ] Add a BitBucket Querier
 
 ## License
