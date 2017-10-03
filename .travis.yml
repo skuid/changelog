@@ -7,9 +7,6 @@ go:
 services:
   - docker
 
-env:
-- CGO_ENABLED=1
-
 before_install:
 - go get golang.org/x/tools/cmd/cover
 - go get -u github.com/golang/dep/...
@@ -22,7 +19,7 @@ script:
 - go test -i ./...
 - go test -cover ./...
 - go test -race ./...
-- go build
+- CGO_ENABLED=0 go build -tags netgo -a -v
 - ./changelog
 - docker build -t skuid/changelog .
 
