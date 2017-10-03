@@ -122,7 +122,7 @@ func (l localQuerier) GetLatestTag() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	return out.String(), nil
+	return strings.TrimSpace(out.String()), nil
 }
 
 // GetLatestTagVersion returns the latest tag version
