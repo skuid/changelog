@@ -23,6 +23,26 @@ type githubWebhookHelper struct {
 	*github.Client
 }
 
+type githubWebhook struct {
+	secret   string
+	apiToken string
+}
+
+func New(secret, apiToken string) http.Handler {
+	h := githubWebhook{secret, apiToken}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/webhook", sendResponse(h.webhook))
+	return mux
+}
+
+func sendResponse(handler func(http.ResponseWriter, *http.Request) (int, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code, message := handler(w, r)
+		w.WriteHeader(code)
+		io.WriteString(w, message)
+	}
+}
+
 func newGithubWebhookHelper(apiToken string) *githubWebhookHelper {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -89,15 +109,15 @@ func (client *githubWebhookHelper) updateRepoStatus(repo *github.Repository, sha
 	return nil
 }
 
-func handlePullRequestEvent(event *github.PullRequestEvent, apiToken string) {
+func (h githubWebhook) handlePullRequestEvent(event *github.PullRequestEvent) {
 
 	eventAction := event.GetAction()
 	// only handle these specific actions
 	if eventAction != "opened" && eventAction != "repoened" && eventAction != "synchronize" {
 		return
 	}
-	client := newGithubWebhookHelper(apiToken)
-	commits, err := client.getPrCommits(event, apiToken)
+	client := newGithubWebhookHelper(h.apiToken)
+	commits, err := client.getPrCommits(event, h.apiToken)
 
 	if err != nil {
 		zap.L().Error(err.Error())
@@ -117,7 +137,7 @@ func handlePullRequestEvent(event *github.PullRequestEvent, apiToken string) {
 
 	iviper := viper.New()
 	iviper.SetConfigType("toml")
-	querier := changelog.NewGithubQuerier(event.Repo.GetHTMLURL(), apiToken)
+	querier := changelog.NewGithubQuerier(event.Repo.GetHTMLURL(), h.apiToken)
 
 	if config, err := querier.GetConfig(); err == nil {
 		iviper.ReadConfig(config)
@@ -156,34 +176,27 @@ func handlePullRequestEvent(event *github.PullRequestEvent, apiToken string) {
 	return
 }
 
-func GithubWebhook(secret, apiToken string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		payload, err := github.ValidatePayload(r, []byte(secret))
+func (h githubWebhook) webhook(w http.ResponseWriter, r *http.Request) (int, string) {
+	payload, err := github.ValidatePayload(r, []byte(h.secret))
 
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			io.WriteString(w, err.Error())
-			return
-		}
-
-		event, err := github.ParseWebHook(github.WebHookType(r), payload)
-
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			io.WriteString(w, err.Error())
-			return
-		}
-
-		if evt, ok := event.(*github.PullRequestEvent); ok {
-			go handlePullRequestEvent(evt, apiToken)
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			io.WriteString(w, "unable to process event type")
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		io.WriteString(w, "{}")
-		return
+	if err != nil {
+		return http.StatusBadRequest, err.Error()
 	}
+
+	event, err := github.ParseWebHook(github.WebHookType(r), payload)
+
+	if err != nil {
+		return http.StatusBadRequest, err.Error()
+	}
+
+	switch evt := event.(type) {
+	case *github.PullRequestEvent:
+		go h.handlePullRequestEvent(evt)
+	case *github.PingEvent:
+		return http.StatusOK, "success"
+	default:
+		return http.StatusMethodNotAllowed, "event type is not allowed"
+	}
+
+	return http.StatusOK, "success"
 }
