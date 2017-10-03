@@ -125,8 +125,7 @@ func (h githubWebhook) handlePullRequestEvent(event *github.PullRequestEvent) {
 	}
 
 	pullRequstNumber := event.PullRequest.GetNumber()
-	lastCommit := commits[len(commits)-1]
-	buildStatusSha := lastCommit.Hash
+	buildStatusSha := event.PullRequest.Head.GetSHA()
 
 	zap.L().Info("validating commit format for pull request", zap.Int("pull_request", pullRequstNumber))
 	err = client.updateRepoStatus(event.Repo, buildStatusSha, StatusPending)
