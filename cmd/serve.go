@@ -23,11 +23,11 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		l, _ := spec.NewStandardLogger()
 		zap.ReplaceGlobals(l)
-		var webhookHandler func(http.ResponseWriter, *http.Request)
+		var webhookHandler http.Handler
 
 		switch viper.GetString("provider") {
 		case "github":
-			webhookHandler = github.GithubWebhook(viper.GetString("secret"), viper.GetString("token"))
+			webhookHandler = github.New(viper.GetString("secret"), viper.GetString("token"))
 		default:
 			zap.L().Fatal(
 				fmt.Sprintf("webhook for provider %s isn't supported", viper.GetString("provider")),
@@ -35,11 +35,8 @@ var serveCmd = &cobra.Command{
 			)
 		}
 
-		mux := http.NewServeMux()
-		mux.HandleFunc("/webhook", webhookHandler)
-
 		handler := middlewares.Apply(
-			mux,
+			webhookHandler,
 			middlewares.InstrumentRoute(),
 			middlewares.Logging(),
 		)
