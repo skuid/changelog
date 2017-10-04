@@ -16,11 +16,20 @@ go get -u github.com/skuid/changelog
 ## Usage
 
 ```
-Usage of changelog:
-      --changelog string                    The Changelog file to write. Defaults to STDOUT if not set.
+Usage:
+  changelog [flags]
+  changelog [command]
+
+Available Commands:
+  help        Help about any command
+  serve       Serve a webhook endpoint for PR validation
+
+Flags:
+      --changelog string                    The file to write. Defaults to STDOUT if not set.
   -f, --from string                         The beginning commit. Defaults to beginning of the repository history
       --from-latest-tag                     If you use tags, set to true to get changes from latest tag.
       --git-dir $(pwd)/.git                 The path to the git directory. If no '--repo' is set, defaults to $(pwd)/.git. Only applies to local provider
+  -h, --help                                help for changelog
       --include-all                         Set to true to include all commits in the changelog. Commit messages that cannot be parsed will be placed in a section titled "Unknown".
   -p, --provider string                     The provider to use. Must be one of local, github (default "local")
   -r, --repo $(git remote get-url origin)   The repository URL. Defaults to $(git remote get-url origin) if using a local provider
@@ -31,6 +40,8 @@ Usage of changelog:
       --until string                        Show commits older than a specific date. Defaults to current time if not set, but --since is. Takes precedence over to/from.
   -v, --version string                      The version you are creating
       --work-tree string                    The path to the directory containing the .git directory. Only applies to local provider.
+
+Use "changelog [command] --help" for more information about a command.
 ```
 
 ### Examples
